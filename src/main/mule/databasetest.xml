@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="64fdf657-86ac-4cea-aa2e-b53781dafc03" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<db:config name="Database_Config" doc:name="Database Config" doc:id="428aaa89-2060-472a-8d86-bcb9561045a9" >
+		<db:oracle-connection host="localhost" user="SWHIZZ16" password="123456" />
+	</db:config>
+	<flow name="databasetestFlow" doc:id="2eabe336-837c-444d-b214-a94e019575ef" >
+		<http:listener doc:name="Listener" doc:id="a6970d1b-c008-4185-b8e7-c4901162db1d" config-ref="HTTP_Listener_config" path="/test"/>
+		<logger level="INFO" doc:name="Logger" doc:id="1b640a1f-ade8-49cd-b11f-a584a3a4d1a5" message="#[payload]"/>
+		<parallel-foreach doc:name="Parallel For Each" doc:id="3a462c83-df3a-4032-81b1-6c7fb1723fcc" >
+			<logger level="INFO" doc:name="Logger" doc:id="08f7c7a0-5e3f-445c-8a06-b780f4b696ab" message="#[payload]" />
+			<db:insert doc:name="Insert" doc:id="9f78fec0-35b3-4192-87f2-23256ef3a528" config-ref="Database_Config">
+			<db:sql><![CDATA[insert into Mstudents values(:sino, :sname, :sadd, :spho)]]></db:sql>
+			<db:input-parameters><![CDATA[#[{
+	sino : payload.sno,
+	sname : payload.sname,
+	sadd : payload.sadd,
+	spho : payload.spho
+}]]]></db:input-parameters>
+		</db:insert>
+		</parallel-foreach>
+		<db:select doc:id="0c540b94-6c2b-4895-94b7-18fa99d1a723" config-ref="Database_Config">
+			<db:sql ><![CDATA[select * from Mstudents]]></db:sql>
+		</db:select>
+		<ee:transform doc:name="Transform Message" doc:id="84b8f437-aa79-4a2a-92ee-5ea150ae9f24" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+</mule>
